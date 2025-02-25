@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <string>
+#include <map>
 using namespace std;
 
 enum TypeElement {
@@ -83,9 +84,9 @@ public:
         if (empty()) {
             return 0;
         }
-        //if (end < start) {
-            //return size - start + end + 1;
-        //}
+        if (end < start) {
+            return size - start + end + 1;
+        }
         else {
             return end - start + 1;
         }
@@ -319,4 +320,149 @@ public:
         delete[] pMem;
     }
 };
+
+
+
+queue<Lexema> ToPostfix(queue<Lexema> t) {
+	stack<Lexema> st;
+	map <string, int> priority = { {"+", 1}, {"-", 1}, {"*", 2}, {"/", 2}, {"(", 0}, {")", 0} };
+	queue<Lexema> q;
+	string scobka_1 = "(";
+	string scobka_2 = ")";
+	int size = t.size_q();
+	while (!t.empty()) {
+		Lexema item = t.front();
+		TypeElement type = item.getType();
+		string lex = item.getStr();
+
+		switch (type) {
+		case Operation:
+			if (lex == scobka_1) { st.push(item); }
+			else if (lex == scobka_2) {
+				while (st.Top().getStr() != scobka_1) {
+					q.push(st.Top());
+					st.pop();
+				}
+				st.pop();
+			}
+			else if (lex == " ") {
+				while (!st.empty()) {
+					q.push(st.Top());
+					st.pop();
+				}
+			}
+			else {
+				if (st.empty()) { st.push(item); break; };
+				while (priority[lex] <= priority[st.Top().getStr()]) {
+					q.push(st.Top());
+					st.pop();
+				}
+				st.push(item);
+			}
+			break;
+		case value:
+			q.push(item);
+			break;
+		}
+		t.pop();
+
+	}
+	return q;
+};
+int perevod(string a) {
+	int number = 0;
+	for (char c : a) {
+		int digit = (int)c - (int)'0';
+		number = number * 10 + digit;
+	}
+	return number;
+};
+
+int Calculate(queue<Lexema> t) {
+	//stack<Lexema> st;
+	stack<int> st;
+	int size = t.size_q();
+	int result;
+	int rightOperand, leftOperand;
+	for (int i = 0; i < size; i++) {
+		Lexema item = t.front();
+		TypeElement type = item.getType();
+		string lex = item.getStr();
+
+
+		switch (type) {
+		case value:
+			st.push(perevod(item.getStr()));
+		case Operation:
+			if (lex == "+") {
+				rightOperand = st.Top();
+				st.pop();
+				leftOperand = st.Top();
+				st.pop();
+				result = leftOperand + rightOperand;
+				st.push(result);
+			}
+			if (lex == "-") {
+				rightOperand = st.Top();
+				st.pop();
+				leftOperand = st.Top();
+				st.pop();
+				result = leftOperand - rightOperand;
+				st.push(result);
+			}
+			if (lex == "*") {
+				rightOperand = st.Top();
+				st.pop();
+				leftOperand = st.Top();
+				st.pop();
+				result = leftOperand * rightOperand;
+				st.push(result);
+			}
+			if (lex == "/") {
+				rightOperand = st.Top();
+				st.pop();
+				leftOperand = st.Top();
+				st.pop();
+				result = leftOperand / rightOperand;
+				st.push(result);
+			}
+
+
+		}
+		t.pop();
+	}
+	return st.Top();
+};
+
+void error(queue<Lexema> t) {
+	int count_1 = 0;
+	int count_2 = 0;
+	int flag = 0;
+	while (!t.empty()) {
+		Lexema item = t.front();
+		TypeElement type = item.getType();
+		string lex = item.getStr();
+
+		if (type == Operation) {
+			if (lex == "(") {
+				count_1 += 1;
+			}
+			if (lex == ")") {
+				count_2 += 1;
+			}
+			else if (lex == "+" || lex == "-" || lex == "*" || lex == "/") {
+				if (flag == 1) throw "dve operation idut podryiat";
+				flag = 1;
+			}
+		}
+		else {
+			flag = 0;
+		}
+
+		t.pop();
+	}
+	if (count_1 != count_2) throw "scobok not hvataet";
+
+};
+
 
